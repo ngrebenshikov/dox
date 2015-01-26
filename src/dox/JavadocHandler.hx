@@ -12,11 +12,12 @@ class JavadocHandler {
 		markdown = mdown;
 	}
 
-	public function parse(path:String, doc:String):DocInfos
+    @:access(dox.MarkdownHandler.processCode)
+    public function parse(path:String, doc:String):DocInfos
 	{
 		var tags = [];
 		// TODO: need to parse this better as haxe source might have this sort of meta
-		var ereg = ~/^@(param|default|exception|throws|deprecated|return|returns|since)\s+([^@]+)/gm;
+		var ereg = ~/^@(param|default|exception|throws|deprecated|return|returns|since|see|author)\s+([^@]+)/gm;
 
 		doc = ereg.map(doc, function(e){
 			var name = e.matched(1);
@@ -32,6 +33,9 @@ class JavadocHandler {
 						value = ereg.matched(1);
 						doc = ereg.matched(2);
 					}
+                case "see":
+                    value = markdown.processCode(path, doc);
+
 				default:
 			}
 			doc = trimDoc(doc);
@@ -39,7 +43,7 @@ class JavadocHandler {
 			return '';
 		});
 
-		var infos:DocInfos = {doc:markdown.markdownToHtml(path, doc), throws:[], params:[], tags:tags};
+		var infos:DocInfos = {doc:markdown.markdownToHtml(path, doc), throws:[], params:[], tags:tags, see:[], authors:[]};
 		for (tag in tags) switch (tag.name)
 		{
 			case 'param': infos.params.push(tag);
@@ -48,6 +52,8 @@ class JavadocHandler {
 			case 'return', 'returns': infos.returns = tag;
 			case 'since': infos.since = tag;
 			case 'default': infos.defaultValue = tag;
+			case 'see': infos.see.push(tag);
+			case 'author': infos.authors.push(tag);
 			default:
 		}
 		return infos;
@@ -71,6 +77,8 @@ typedef DocInfos = {
 	?deprecated:DocTag,
 	?since:DocTag,
 	?defaultValue:DocTag,
+	?authors:Array<DocTag>,
+	?see:Array<DocTag>,
 	params:Array<DocTag>,
 	throws:Array<DocTag>,
 	tags:Array<DocTag>

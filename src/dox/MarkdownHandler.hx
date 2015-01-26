@@ -39,6 +39,25 @@ class MarkdownHandler {
 	function processCode(path:String, source:String) {
 		source = StringTools.htmlEscape(source);
 
+        //#field => this.field
+        source = ~/^#(\w+)/g.map(source, function(e){
+            var field = e.matched(1);
+            return 'this.$field';
+        });
+
+        //[space]#field => [space]this.field
+        source = ~/\s#(\w+)/g.map(source, function(e){
+            var field = e.matched(1);
+            return ' this.$field';
+        });
+
+        //Type.#field => Type.field
+        source = ~/(\w+)#(\w+)/g.map(source, function(e){
+            var type = e.matched(1);
+            var field = e.matched(2);
+            return '$type.$field';
+        });
+
 		// this.field => #field
 		source = ~/this\.(\w+)/g.map(source, function(e){
 			var field = e.matched(1);
