@@ -19,6 +19,9 @@ class MarkdownHandler {
 		var document = new Document();
 		document.inlineSyntaxes.push(new MagicCodeSyntax(processCode.bind(path)));
 
+		//replace <code>text</code> to `text`
+        markdown = ~/<\/?code>/g.replace(markdown, '`');
+
 		// replace windows line endings with unix, and split
 		var lines = ~/\n\r/g.replace(markdown, '\n').split("\n");
 
@@ -51,7 +54,7 @@ class MarkdownHandler {
             return ' this.$field';
         });
 
-        //Type.#field => Type.field
+        //Type#field => Type.field
         source = ~/(\w+)#(\w+)/g.map(source, function(e){
             var type = e.matched(1);
             var field = e.matched(2);
@@ -64,21 +67,21 @@ class MarkdownHandler {
 			return 'this.<a href="#$field">$field</a>';
 		});
 
-		// Type, pack.Type, pack.Type.field => pack/Type.html#field
-		source = ~/\b((\w+\.)*[A-Z]\w+)(\.\w+)*\b/g.map(source, function(e){
-			var text = e.matched(0);
-			var type =  e.matched(1);
+		// Type, pack.Type, pack.Type.field, pack.Type.FIELD => pack/Type.html#field
+		source = ~/\b((\[a-z_0123456789]+\.)*[A-Z]\w+)(\.\w+)*\b/g.map(source, function(e) {
+            var text = e.matched(0);
+            var type =  e.matched(1);
 
-			type = infos.resolveType(path, type);
-			if (type != null)
-			{
-				var field = e.matched(3);
-				var href = resolveTypeLink(type, field);
-				return '<a href="$href">$text</a>';
-			}
+            type = infos.resolveType(path, type);
+            if (type != null)
+            {
+                var field = e.matched(3);
+                var href = resolveTypeLink(type, field);
+                return '<a href="$href">$text</a>';
+            }
 
-			return text;
-		});
+            return text;
+        });
 
 		// Type, null => /Null.html
 		source = ~/null/g.map(source, function(e){
